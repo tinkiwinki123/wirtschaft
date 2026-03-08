@@ -53,7 +53,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
-
+CSRF_TRUSTED_ORIGINS = ['https://amersee-bike-hub.onrender.com']
 ROOT_URLCONF = 'phone_shop.urls'
 
 TEMPLATES = [
