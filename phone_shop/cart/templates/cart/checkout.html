@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Оплата{% endblock %}
+{% block body_class %}
+sub_page
+{% endblock %}
+{% block content %}
+  <section class="food_section layout_padding">
+    <div class="container">
+      <div class="heading_container heading_center">
+        <h2>Bezahlen</h2>
+      </div>
+      <p>Die Buchung wurde erfolgreich abgeschlossen!</p>
+      {% if items %}
+        <ul>
+          {% for item in items %}
+            <li>{{ item.name }} — {{ item.qty }} × ${{ item.price }} = ${{ item.subtotal }}</li>
+          {% endfor %}
+        </ul>
+        <h4>Total: ${{ total }}</h4>
+      {% else %}
+      {% endif %}
+      <a href="{% url 'shop' %}" class="btn btn-primary">Zurück zum Shop</a>
+    </div>
+  </section>
+{% endblock %}

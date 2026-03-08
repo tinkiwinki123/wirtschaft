@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block title %}Warenkorb{% endblock %}
+{% block body_class %}sub_page{% endblock %}
+
+{% block content %}
+<section class="food_section layout_padding">
+  <div class="container">
+    <div class="heading_container heading_center">
+      <h2>Ihr Warenkorb</h2>
+    </div>
+
+    {% if cart %}
+    <div class="table-responsive mt-4">
+      <table class="table align-middle">
+        <thead>
+          <tr class="text-uppercase" style="font-size: 0.9rem; letter-spacing: 1px;">
+            <th>Artikel</th>
+            <th>Typ</th>
+            <th>Zeitraum / Info</th>
+            <th>Preis</th>
+            <th class="text-center">Aktion</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for key, item in cart.items %}
+          <tr>
+            <td>
+              <div class="d-flex align-items-center">
+                <strong style="font-size: 1.1rem;">{{ item.name }}</strong>
+              </div>
+            </td>
+            <td>
+              <span class="badge rounded-pill {% if item.action_type == 'buy' %}bg-success{% else %}bg-info text-dark{% endif %} px-3">
+                {{ item.rate_name }}
+              </span>
+            </td>
+            <td>
+              {% if item.start %}
+                <div class="small">
+                  <span class="text-muted">Von:</span> {{ item.start|slice:":10" }} <span class="text-muted">um</span> {{ item.start|slice:"11:16" }}<br>
+                  {% if item.end %}
+                    <span class="text-muted">Bis:</span> {{ item.end|slice:":10" }} <span class="text-muted">um</span> {{ item.end|slice:"11:16" }}
+                  {% endif %}
+                </div>
+              {% else %}
+                <span class="text-muted small"><i class="fa fa-shopping-bag"></i> Sofortiger Besitz</span>
+              {% endif %}
+            </td>
+            <td>
+              <span class="text-dark"><strong>{{ item.price }} €</strong></span>
+            </td>
+            <td class="text-center">
+              <form method="post" action="{% url 'cart:remove' %}">
+                {% csrf_token %}
+                <input type="hidden" name="key" value="{{ key }}">
+                <button type="submit" class="btn btn-link text-danger p-0" title="Entfernen" style="text-decoration: none; font-size: 1.2rem;">
+                  <i class="fa fa-trash"></i> ✕
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="row mt-5 pt-3 border-top">
+      <div class="col-md-6 mb-3">
+        <a href="{% url 'shop' %}" class="btn btn-outline-secondary rounded-pill">
+          <i class="fa fa-chevron-left"></i> Weiter einkaufen
+        </a>
+      </div>
+      <div class="col-md-6 text-right">
+        <div class="mb-3">
+          <span class="h5 text-muted">Gesamtsumme:</span>
+          <span class="h3 ml-2 text-warning"><strong>{{ total_price }} €</strong></span>
+        </div>
+        <a href="{% url 'cart:checkout' %}" class="btn btn-warning btn-lg rounded-pill px-5 shadow-sm">
+          Buchen <i class="fa fa-chevron-right ml-2"></i>
+        </a>
+      </div>
+    </div>
+
+    {% else %}
+    <div class="text-center py-5">
+      <div class="mb-4">
+        <i class="fa fa-shopping-cart text-light" style="font-size: 5rem;"></i>
+      </div>
+      <h3>Ihr Warenkorb ist leer</h3>
+      <p class="text-muted">Sie haben noch keine Artikel in den Warenkorb gelegt.</p>
+      <a href="{% url 'shop' %}" class="btn btn-warning mt-3 rounded-pill px-4">
+        Zum Shop zurückkehren
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

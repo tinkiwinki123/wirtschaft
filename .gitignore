@@ -1,0 +1,13 @@
+# Среда разработки и системные файлы
+venv/
+.vscode/
+.github/
+__pycache__/
+*.pyc
+.DS_Store
+
+# Django (с учетом твоей вложенности)
+phone_shop/db.sqlite3
+phone_shop/media/
+phone_shop/**/__pycache__/
+

@@ -1,0 +1,225 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Produkte{% endblock %}
+
+{% block body_class %}sub_page{% endblock %}
+
+{% block content %}
+<section class="food_section layout_padding">
+  <div class="container">
+    
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %} text-center shadow-sm animate-fade-in">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <div class="heading_container heading_center">
+      <h2>Unsere Produkte</h2>
+    </div>
+
+    <div id="reparatur-info-box" class="alert shadow-sm mt-3 animate-fade-in" style="display: none; border-left: 5px solid #ffc107; background-color: #222831; color: white;">
+      <div class="row align-items-center p-2">
+        <div class="col-1 text-center" style="font-size: 2rem;">🛠️</div>
+        <div class="col-11">
+          <h5 class="mb-1" style="color: #ffc107; font-weight: bold;">Service & Reparatur Information</h5>
+          <p class="mb-1">Bitte beachten Sie: Die Servicepreise hängen vom <strong>Fahrradtyp</strong> und dem tatsächlichen <strong>Arbeitsaufwand</strong> ab.</p>
+          <p class="mb-0"><strong>Terminanfrage:</strong> Bitte kontaktieren Sie uns direkt per Telefon oder Nachricht, um einen passenden Termin zu vereinbaren.</p>
+        </div>
+      </div>
+    </div>
+
+    <ul class="filters_menu">
+      <li class="active" data-filter="*">Alle</li>
+      <li data-filter=".Mountainbikes">Mountainbikes</li>
+      <li data-filter=".TrekkingFahrräder">Trekking Fahrräder</li>
+      <li data-filter=".Kinderfahrräder">Kinderfahrräder</li>
+      <li data-filter=".Bestandteile">Bestandteile</li>
+      <li data-filter=".Ausrüstung">Ausrüstung</li>
+      <li data-filter=".Reparatur">Reparatur</li>
+    </ul>
+
+    <div class="filters-content">
+      <div class="row grid align-items-start">
+        {% for product in products %}
+        <div class="col-sm-6 col-lg-4 all {{ product.category }} mb-4">
+          <div class="box shadow-sm" style="background-color: #222831; border-radius: 15px; overflow: hidden; display: flex; flex-direction: column; height: 100%;">
+            
+            <div class="img-box" style="background-color: #f1f2f3; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 200px;">
+              {% if product.image %}
+                <img src="{{ product.image.url }}" class="full-img" alt="{{ product.name }}" style="max-width: 100%; height: auto; object-fit: contain;">
+              {% else %}
+                <img src="{% static 'images/fallback.png' %}" class="full-img" style="max-width: 100%;">
+              {% endif %}
+            </div>
+
+            <div class="detail-box p-3 text-white">
+              <h5 class="mb-1" style="font-weight: bold;">{{ product.name }}</h5>
+              
+              <p class="product-description small mb-3 text-expandable js-description-toggle" 
+                style="color: #bbb; cursor: pointer; line-height: 1.4;">
+                {{ product.description|default:"Keine Beschreibung verfügbar." }}
+              </p>
+              
+              <div class="price-info-card bg-white rounded p-2 mb-3 border shadow-sm text-dark">
+                {% if product.verkaufbar and product.preis_kauf %}
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="small" style="color: #555;">Kaufpreis:</span>
+                    <span class="font-weight-bold" style="font-size: 1.1rem; color: #000;">{{ product.preis_kauf }} €</span>
+                  </div>
+                {% endif %}
+
+                {% if product.leihbar %}
+                  <div class="rent-prices {% if product.verkaufbar %}border-top mt-1 pt-1{% endif %}" style="border-color: #eee !important;">
+                    <div class="d-flex flex-wrap justify-content-between" style="font-size: 0.85rem; color: #000;">
+                      {% if product.preis_stunde %}<div>Std: <strong>{{ product.preis_stunde }}€</strong></div>{% endif %}
+                      {% if product.preis_tag %}<div>Tag: <strong>{{ product.preis_tag }}€</strong></div>{% endif %}
+                    </div>
+                  </div>
+                {% endif %}
+
+                {% if product.ist_service and product.preis_service %}
+                  <div class="d-flex justify-content-between align-items-center">
+                    <span class="small" style="color: #555;">Service ab:</span>
+                    <strong style="color: #000;">{{ product.preis_service }} €</strong>
+                  </div>
+                {% endif %}
+              </div>
+
+              <form method="post" action="{% url 'cart:add' %}">
+                {% csrf_token %}
+                <input type="hidden" name="product_id" value="{{ product.id }}">
+
+                <div class="options-container mb-3">
+                  {% if product.ist_service %}
+                      <input type="hidden" name="action_type" value="repair">
+                      <input type="datetime-local" name="start" class="form-control form-control-sm" required>
+                  {% else %}
+                      {% with has_rent=product.leihbar has_buy=product.verkaufbar has_lease=product.leasing_available %}
+                      
+                      {% if has_rent and has_buy or has_rent and has_lease or has_buy and has_lease %}
+                          <div class="btn-group d-flex mb-2 flex-wrap custom-selection-group">
+                              {% if has_rent %}<label class="btn btn-outline-warning btn-sm flex-fill py-2 m-0 border-1"><input type="radio" name="action_type" value="rent" required onchange="updateCalendarDisplay(this, 'dates-{{product.id}}')"> Mieten</label>{% endif %}
+                              {% if has_buy %}<label class="btn btn-outline-success btn-sm flex-fill py-2 m-0 border-1"><input type="radio" name="action_type" value="buy" onchange="updateCalendarDisplay(this, 'dates-{{product.id}}')"> Kaufen</label>{% endif %}
+                              {% if has_lease %}<label class="btn btn-outline-info btn-sm flex-fill py-2 m-0 border-1"><input type="radio" name="action_type" value="leasing" onchange="updateCalendarDisplay(this, 'dates-{{product.id}}')"> Leasing</label>{% endif %}
+                          </div>
+                      {% else %}
+                          {% if has_rent %}<input type="hidden" name="action_type" value="rent">{% endif %}
+                          {% if has_buy %}<input type="hidden" name="action_type" value="buy">{% endif %}
+                          {% if has_lease %}<input type="hidden" name="action_type" value="leasing">{% endif %}
+                      {% endif %}
+
+                      <div id="dates-{{product.id}}" class="mt-2 text-left animate-fade-in" 
+                           style="{% if has_rent and not has_buy and not has_lease %}display: block;{% else %}display: none;{% endif %} background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px;">
+                          <div class="row no-gutters">
+                              <div class="col-6 pr-1"><small class="text-light">Von:</small><input type="datetime-local" name="start" class="form-control form-control-sm"></div>
+                              <div class="col-6 pl-1"><small class="text-light">Bis:</small><input type="datetime-local" name="end" class="form-control form-control-sm"></div>
+                          </div>
+                      </div>
+                      {% endwith %}
+                  {% endif %}
+                </div>
+
+                <button type="submit" class="btn btn-warning w-100 rounded-pill font-weight-bold py-2 shadow">In den Warenkorb</button>
+              </form>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    // 1. ПОКАЗ БАННЕРА ПРИ ФИЛЬТРАЦИИ
+    $('.filters_menu li').on('click', function() {
+        var filterValue = $(this).attr('data-filter');
+        if (filterValue === '.Reparatur') {
+            $('#reparatur-info-box').fadeIn(400);
+        } else {
+            $('#reparatur-info-box').fadeOut(200);
+        }
+    });
+
+    // 2. ЗАПРЕТ НА ВРЕМЯ (08:00 - 20:00)
+    $(document).on('change', 'input[type="datetime-local"]', function() {
+        const input = $(this);
+        if (!input.val()) return;
+        const date = new Date(input.val());
+        const totalMinutes = (date.getHours() * 60) + date.getMinutes();
+        const form = input.closest('form');
+        const actionType = form.find('input[name="action_type"]:checked').val() || form.find('input[name="action_type"]').val();
+        let minMin = 480; let maxMin = 1200;
+        let msg = "Wir haben von 08:00 bis 20:00 Uhr geöffnet.";
+        if (actionType === 'rent' && input.attr('name') === 'start') {
+            maxMin = 1140; msg = "Abholungen sind nur zwischen 08:00 и 19:00 Uhr möglich.";
+        }
+        if (totalMinutes < minMin || totalMinutes > maxMin) {
+            alert(msg);
+            date.setHours(8); date.setMinutes(0);
+            const pad = (n) => String(n).padStart(2, '0');
+            input.val(`${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}T08:00`);
+        }
+    });
+
+    // 3. ЛОГИКА РАЗВОРАЧИВАНИЯ ТЕКСТА + ISOTOPE RELAYOUT
+    $('.js-description-toggle').on('click', function() {
+        $(this).toggleClass('expanded');
+        // Даем небольшую задержку, чтобы класс успел примениться, и пересчитываем сетку
+        setTimeout(function() {
+            if ($('.grid').data('isotope')) {
+                $('.grid').isotope('layout');
+            }
+        }, 50); 
+    });
+});
+
+function updateCalendarDisplay(radio, divId) {
+    var dateDiv = document.getElementById(divId);
+    if (!dateDiv) return;
+    var isRent = (radio.value === 'rent' && radio.checked);
+    dateDiv.style.display = isRent ? 'block' : 'none';
+    $(dateDiv).find('input').prop('required', isRent);
+    setTimeout(() => { if ($('.grid').data('isotope')) $('.grid').isotope('layout'); }, 100);
+}
+</script>
+
+<style>
+  .alert-success { background-color: #d4edda !important; color: #155724 !important; border-color: #c3e6cb !important; }
+  .alert-danger { background-color: #f8d7da !important; color: #721c24 !important; border-color: #f5c6cb !important; }
+  
+  /* Ограничение текста */
+  .text-expandable {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    transition: background 0.3s ease;
+  }
+
+  /* Состояние при клике */
+  .text-expandable.expanded {
+    display: block;
+    overflow: visible;
+    -webkit-line-clamp: unset;
+    background: rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 8px;
+  }
+
+  .grid { display: flex; flex-wrap: wrap; }
+  .box { transition: transform 0.3s ease; position: relative; z-index: 1; }
+  .box:hover, .box:focus-within { transform: translateY(-5px); z-index: 10; }
+  .custom-selection-group input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
+  .custom-selection-group .btn-outline-warning:has(input:checked) { background-color: #ffc107 !important; color: #000 !important; }
+  .custom-selection-group .btn-outline-success:has(input:checked) { background-color: #28a745 !important; color: #fff !important; }
+  .animate-fade-in { animation: fadeIn 0.4s; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+  input[type="datetime-local"] { color-scheme: light; }
+</style>
+{% endblock %}
