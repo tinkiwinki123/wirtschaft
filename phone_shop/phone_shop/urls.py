@@ -9,7 +9,11 @@ urlpatterns = [
     path('shop/', include('shop.urls')),
     path('cart/', include('cart.urls')),
 ]
-
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+else:
+    # На Render DEBUG обычно False, поэтому добавляем принудительно для школы
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 # Раздача медиа-файлов в режиме разработки
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
